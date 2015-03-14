@@ -1,0 +1,91 @@
+// Fill (ctrl f)
+
+function getConfig() {
+    //filePath="/Users/davemorro/Google Drive/Products/Blink Consult/consult.json";
+    filePath = sketch.scriptPath.stringByDeletingLastPathComponent()+"/consult.json";
+    return JSON.parse(NSString.stringWithContentsOfFile(filePath));  
+}
+
+function getArtboards() {
+    if (selection.count() == 0) {
+        function createSelect(msg, informative, items, selectedItemIndex){
+            var alert = [[NSAlert alloc] init]
+            [alert setMessageText:msg]
+            [alert setInformativeText:informative]
+            [alert addButtonWithTitle:'OK']
+            [alert addButtonWithTitle:'Cancel']
+
+            var responseCode = [alert runModal]
+            return responseCode
+        }
+
+        var choice = createSelect('Update All Artboards?', 'This will update all eligible layers with data from your configuration')
+
+        if (choice == 1000) {
+            return doc.currentPage().artboards()
+        } else {
+            exit();
+        }
+    } else {
+        artboard = selection[0];
+        while(artboard.parentGroup() != doc.currentPage()) {
+            artboard = artboard.parentGroup();
+        }
+        return artboard;
+    }
+}
+
+function processArtboards() {
+    var artboards = getArtboards();
+    var config = getConfig();
+    
+    for (var i=0; i<artboards.count(); i++) {
+        artboard_name = artboards[i].name()
+        var keys = [];
+        var copy = config[artboard_name];
+        
+        if (copy == undefined) {
+            log("no configuration found for '" + artboard_name + "' artboard");
+        } else {
+            for (var setting in config[artboard_name]) {
+                keys.push(setting);
+            }
+            var layers = artboards[i].children();
+
+            fillArtboard(layers, keys, copy);
+            log("updated '" + artboard_name + "' artboard");
+        }
+    }
+}
+
+function fillArtboard(layers, keys, copy) {
+    loop = layers.objectEnumerator();
+    while (layer = loop.nextObject()) {
+        if (keys.toString().indexOf(layer.name()) != -1 && layer.class() != "MSLayerGroup") {
+            layer.setStringValue(copy[layer.name()]);
+        }
+    }
+}
+
+/* out of date, but keeping it around for reference. will remove when in github */
+
+function getBlinkFill(){
+    getConfig();
+    
+    for (var i=0; i<selection.count(); i++) {
+        layer = selection[i];
+        print(layer.name());
+        if (layer.class() === MSTextLayer) {
+            cp = artboard_config[layer.name()];
+            if (cp == undefined) {
+                [[NSApplication sharedApplication] displayDialog:"BlinkFill was unable to fill the element " + layer.name() + " because it is not represented in consult.json" withTitle:"Please select a layer in the configuration file"]]
+            } else {
+                layer.setStringValue(cp);
+            }
+        } else {
+            [[NSApplication sharedApplication] displayDialog:"BlinkFill requires text layers to be selected" withTitle:"Please select a text layer"]]
+        }
+    }
+}
+
+processArtboards();
