@@ -67,25 +67,4 @@ function fillArtboard(layers, keys, copy) {
     }
 }
 
-/* out of date, but keeping it around for reference. will remove when in github */
-
-function getBlinkFill(){
-    getConfig();
-    
-    for (var i=0; i<selection.count(); i++) {
-        layer = selection[i];
-        print(layer.name());
-        if (layer.class() === MSTextLayer) {
-            cp = artboard_config[layer.name()];
-            if (cp == undefined) {
-                [[NSApplication sharedApplication] displayDialog:"BlinkFill was unable to fill the element " + layer.name() + " because it is not represented in consult.json" withTitle:"Please select a layer in the configuration file"]]
-            } else {
-                layer.setStringValue(cp);
-            }
-        } else {
-            [[NSApplication sharedApplication] displayDialog:"BlinkFill requires text layers to be selected" withTitle:"Please select a text layer"]]
-        }
-    }
-}
-
 processArtboards();
