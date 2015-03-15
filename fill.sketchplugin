@@ -1,14 +1,29 @@
-// Fill (ctrl f)
+// Blink Fill (ctrl b)
 
 function getConfig() {
     //filePath="/Users/davemorro/Google Drive/Products/Blink Consult/consult.json";
-    filePath = sketch.scriptPath.stringByDeletingLastPathComponent()+"/consult.json";
-    return JSON.parse(NSString.stringWithContentsOfFile(filePath));  
+    //filePath = sketch.scriptPath.stringByDeletingLastPathComponent()+"/consult.json";
+    //return JSON.parse(NSString.stringWithContentsOfFile(filePath));  
+    
+    var url = NSURL.URLWithString_("https://www.dropbox.com/s/mnvx6xur6x5x3ph/consult.json?dl=1");
+    var request = NSMutableURLRequest.requestWithURL_cachePolicy_timeoutInterval(url, NSURLRequestReloadIgnoringLocalCacheData, 60);
+    request.setHTTPMethod_("GET");
+    
+    var response = null;
+    var responseData = [NSURLConnection sendSynchronousRequest:request returningResponse:nil error:nil];
+    
+    if (responseData != nil){ //response/online or not?
+        data = [[NSString alloc] initWithData:responseData encoding:NSUTF8StringEncoding];
+        return JSON.parse(data);
+    } else {
+        [doc showMessage:"unable to load config"]
+        exit();
+    }
 }
 
 function getArtboards() {
     if (selection.count() == 0) {
-        function createSelect(msg, informative, items, selectedItemIndex){
+        function createConfirm(msg, informative){
             var alert = [[NSAlert alloc] init]
             [alert setMessageText:msg]
             [alert setInformativeText:informative]
@@ -19,7 +34,7 @@ function getArtboards() {
             return responseCode
         }
 
-        var choice = createSelect('Update All Artboards?', 'This will update all eligible layers with data from your configuration')
+        var choice = createConfirm('Update All Artboards?', 'This will update all eligible layers with data from your configuration')
 
         if (choice == 1000) {
             return doc.currentPage().artboards()
@@ -53,7 +68,7 @@ function processArtboards() {
             var layers = artboards[i].children();
 
             fillArtboard(layers, keys, copy);
-            log("updated '" + artboard_name + "' artboard");
+            [doc showMessage:"updated '" + artboard_name + "' artboard"]
         }
     }
 }
