@@ -53,6 +53,7 @@ function getArtboards() {
 function processArtboards() {
     var artboards = getArtboards();
     var config = getConfig();
+    var updated = [];
     
     for (var i=0; i<artboards.count(); i++) {
         artboard_name = artboards[i].name()
@@ -68,9 +69,12 @@ function processArtboards() {
             var layers = artboards[i].children();
 
             fillArtboard(layers, keys, copy);
-            [doc showMessage:"updated '" + artboard_name + "' artboard"]
+            updated.push(artboard_name);
         }
     }
+    
+    
+    [doc showMessage:"updated artboards: " + updated.toString()]
 }
 
 function fillArtboard(layers, keys, copy) {
