@@ -1,0 +1,102 @@
+// Sync Copy (ctrl s)
+
+#import 'syncCopy_config.js'
+
+function syncCopy() {
+    var artboards = getArtboards();
+    var config = getConfig();
+    var updated = [];
+    
+    for (var i=0; i<artboards.count(); i++) {
+        var keys = [];
+        var copy = config;
+        artboard_name = artboards[i].name();
+        
+        sketch.doc.showMessage("Updating " + artboard_name);
+        
+        a = artboard_name.split(" ")[1].split(".");
+        
+        while (a.length) {
+            var n = a.shift();
+            copy = copy[n];
+        }
+        
+        if (copy == undefined) {
+            log("no configuration found for '" + artboard_name + "' artboard");
+        } else {
+            copy = copy["view"];
+            for (var setting in copy) {
+                keys.push(setting);
+            }
+            var layers = artboards[i].children();
+
+            fillArtboard(layers, keys, copy)
+            updated.push(artboard_name);
+        }
+    }
+    
+    [doc showMessage:"updated artboards: " + updated.join(", ")]
+}
+
+function getArtboards() {
+    if (selection.count() == 0) {
+        function createConfirm(msg, informative){
+            var alert = [[NSAlert alloc] init]
+            [alert setMessageText:msg]
+            [alert setInformativeText:informative]
+            [alert addButtonWithTitle:'OK']
+            [alert addButtonWithTitle:'Cancel']
+
+            var responseCode = [alert runModal]
+            return responseCode
+        }
+
+        var choice = createConfirm('Update All Artboards?', 'This will update all eligible layers with data from your configuration')
+
+        if (choice == 1000) {
+            return doc.currentPage().artboards()
+        } else {
+            exit();
+        }
+    } else {
+        var a = []
+        artboard = selection[0];
+        while(artboard.parentGroup() != doc.currentPage()) {
+            artboard = artboard.parentGroup();
+        }
+        a.push(artboard);
+        return a;
+    }
+}
+
+function getConfig() {
+    var url = NSURL.URLWithString_("https://www.dropbox.com/s/mnvx6xur6x5x3ph/consult.json?dl=1");
+    var request = NSMutableURLRequest.requestWithURL_cachePolicy_timeoutInterval(url, NSURLRequestReloadIgnoringLocalCacheData, 60);
+    sketch.doc.showMessage('Loading data from config');
+    request.setHTTPMethod_("GET");
+    
+    var response = null;
+    var responseData = [NSURLConnection sendSynchronousRequest:request returningResponse:nil error:nil];
+    
+    if (responseData != nil){ //response/online or not?
+        data = [[NSString alloc] initWithData:responseData encoding:NSUTF8StringEncoding];
+        return JSON.parse(data);
+    } else {
+        sketch.doc.showMessage('Unable to load config from dropbox');
+        exit();
+    }
+}
+
+function fillArtboard(layers, keys, copy) {
+    loop = layers.objectEnumerator();
+    while (layer = loop.nextObject()) {
+        if (keys.toString().indexOf(layer.name()) != -1 && layer.class() != "MSLayerGroup") {
+            new_copy = copy[[layer name]];
+            log([layer name]);
+            [layer setStringValue:new_copy];
+            [layer adjustFrameToFit]
+        }
+    }
+}
+
+syncCopy();
